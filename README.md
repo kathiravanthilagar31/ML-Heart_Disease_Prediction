@@ -1,52 +1,128 @@
-# Heart Disease Prediction Using Machine Learning
+# Heart disease prediction and deployed in GCP and Docker
 
-## Project Overview
-This project aims to create a machine learning model to predict whether a patient is affected by heart disease based on various health metrics. The model is developed using Python and Flask, enabling seamless deployment for healthcare professionals.
+## ML Model Development and Google Cloud Deployment Procedure
 
-## Steps to Develop the ML Model
+> **Note**: Before proceeding with deployment, ensure your Flask ML project works locally and that you have a `requirements.txt` file containing the necessary libraries.
 
-1. **Collect the Data**: Gather relevant patient health data to form the dataset used for training the model.
-   
-2. **Import Libraries and Load the Data**: Utilize essential libraries such as Pandas, NumPy, and Scikit-learn to load and manipulate the data.
-   
-3. **Preprocess the Data**: Clean the dataset by handling missing values, outliers, and ensuring data quality for accurate predictions.
-   
-4. **Feature Engineering**: Analyze the data to identify and create relevant features that improve the model's performance.
-   
-5. **Model Creation**: Develop and train various machine learning models to predict heart disease. Implement techniques such as cross-validation to evaluate model performance.
+### Step-by-Step Guide:
 
-6. **Save the Best Model**: Use libraries like `joblib` or `pickle` to save the model that performs best during evaluation for future use.
+1. **Create Google Account**:
+   - If you don't already have a Google Account, create one.
 
-7. **Deployment**: Deploy the model using a Flask application. This includes setting up a web server to allow doctors to interact with the model through a user-friendly interface.
+2. **Go to Google Cloud Console**:
+   - Navigate to [Google Cloud Console](https://console.cloud.google.com/).
 
-8. **Develop a Flask App**: 
-   - Build a Flask application that integrates the saved best model to enable predictions based on new patient data.
-   - Launch the local server app to facilitate user interaction and predictions in real-time.
+3. **Activate Free Credits**:
+   - Enable free credits for Google Cloud if this is your first time using it.
 
-## Key Features
-- **User-friendly Interface**: The web application allows healthcare professionals to input patient data and receive immediate predictions regarding heart disease.
-- **Scalability**: The model can be easily deployed to cloud platforms for broader access.
-- **Early Diagnostics**: This application aids in early detection of heart disease, improving patient outcomes through timely intervention.
+4. **Go to IAM**:
+   - Click on the three stacked horizontal lines on the left side, then select **IAM & Admin** from the options.
 
-## Getting Started
-1. Clone the repository:
-   ```bash
-   git clone <repository-url>
-   cd heart-disease-prediction
-   ```
+5. **Navigate to "Managed Resources"**:
+   - In the IAM section, select **Managed Resources**.
 
-2. Install required packages:
-   ```bash
-   pip install -r requirements.txt
-   ```
+6. **Create a New Project**:
+   - Click **Create Project** and enter a project name in lowercase (e.g., `heartdockergcp`).
 
-3. Run the Flask application:
-   ```bash
-   python app.py
-   ```
+7. **Download Google Cloud SDK**:
+   - Use [this link](https://dl.google.com/dl/cloudsdk/channels/rapid/GoogleCloudSDKinstaller.exe) to download the Google Cloud SDK installer.
 
-4. Open your web browser and navigate to `http://localhost:5000` to access the application.
+8. **Install Google Cloud SDK**:
+   - Install the downloaded `.exe` file.
 
-## Conclusion
-This project demonstrates the implementation of a machine learning model for heart disease prediction, with a focus on usability for healthcare professionals. The combination of data preprocessing, model training, and deployment using Flask ensures a practical solution for early diagnostics.
+9. **Download Docker Desktop**:
+   - Download Docker for Windows using [this link](https://docs.docker.com/desktop/install/windows-install/).
+
+10. **Install Docker Desktop**:
+    - Follow the installation process for Docker on your system.
+
+11. **Verify Docker Installation**:
+    - Open **Command Prompt** and issue the command:
+      ```bash
+      docker --version
+      ```
+    - If Docker is installed correctly, this will display the Docker version.
+
+12. **Create Dockerfile**:
+    - Open the project folder in Windows, right-click, and select **New > Text Document**.
+    - Name it `Dockerfile.txt`, then paste the following code into the file:
+
+    ```dockerfile
+    # Use an official Python runtime as the base image
+    FROM python:3.11-slim
+
+    # Set the working directory in the container
+    WORKDIR /app
+
+    # Copy the current directory contents into the container at /app
+    COPY . /app
+
+    # Install required Python packages from the requirements file
+    RUN pip install --no-cache-dir -r requirements.txt
+
+    # Expose the port that the Flask app will run on
+    EXPOSE 8080
+
+    # Set the default command to run the Flask app (point to main.py)
+    CMD ["gunicorn", "--bind", ":8080", "--workers", "1", "--threads", "8", "--timeout", "0", "main:app"]
+    ```
+
+13. **Rename Dockerfile**:
+    - Go to **Command Prompt** and navigate to the working directory.
+    - Rename the Dockerfile by running:
+    ```bash
+    ren Dockerfile.txt Dockerfile
+    ```
+
+14. **Authenticate Google Cloud**:
+    - Run the following command to authenticate your account:
+    ```bash
+    gcloud auth login
+    ```
+    - This will open a browser window where you will log in to your Google account.
+
+15. **Set Google Cloud Project**:
+    - Set your Google Cloud project with the command:
+    ```bash
+    gcloud config set project YOUR_PROJECT_ID
+    ```
+    - Replace `YOUR_PROJECT_ID` with the project ID you created earlier, e.g., `heartdockergcp`.
+
+16. **Enable Cloud Build API**:
+    - Enable the Cloud Build service with the command:
+    ```bash
+    gcloud services enable cloudbuild.googleapis.com
+    ```
+
+17. **Submit the Build to Google Cloud**:
+    - Use the following command to build and tag your Docker image:
+    ```bash
+    gcloud builds submit --tag gcr.io/YOUR_PROJECT_ID/your_ml_app .
+    ```
+    - Replace `YOUR_PROJECT_ID` with your project name and `your_ml_app` with your image name. For example:
+    ```bash
+    gcloud builds submit --tag gcr.io/heartdockergcp/heartdockerimagegcp .
+    ```
+
+18. **List Container Images**:
+    - To verify the container image has been uploaded, use the following command:
+    ```bash
+    gcloud container images list
+    ```
+
+19. **Deploy the Application**:
+    - Deploy your containerized app to Google Cloud Run:
+    ```bash
+    gcloud run deploy --image gcr.io/YOUR_PROJECT_ID/your_ml_app --platform managed
+    ```
+    - For example:
+    ```bash
+    gcloud run deploy --image gcr.io/heartdockergcp/heartdockerimagegcp --platform managed
+    ```
+
+20. **View the App**:
+    - Once the app is deployed, you will be provided with a global URL. To access it from the browser, use:
+    ```bash
+    gcloud app browse
+    ```
 
